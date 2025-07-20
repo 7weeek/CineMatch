@@ -78,7 +78,7 @@ def display_movie_poster(movie_row, show_genres=True, show_ratings=True):
         title_col, like_col = st.columns([4, 1])
         with title_col:
             st.markdown(f"**{movie_row.title}**", unsafe_allow_html=True)
-        
+
         # Metadata
         if show_genres and hasattr(movie_row, 'genres'):
             st.caption(f"🎭 {movie_row.genres}")
