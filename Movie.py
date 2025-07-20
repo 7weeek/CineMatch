@@ -252,7 +252,11 @@ with st.sidebar:
     else:
         menu_pages = ["Home", "Search", "Auth"]
 
-    page = st.radio("Go to", menu_pages)
+    if "active_page" not in st.session_state:
+    st.session_state["active_page"] = "Home"
+
+    page = st.radio("Go to", menu_pages, index=menu_pages.index(st.session_state["active_page"]))
+
 
     if "user_id" in st.session_state:
         cursor.execute("SELECT username, full_name FROM users WHERE id = ?", (st.session_state["user_id"],))
@@ -443,6 +447,7 @@ if page == "Auth":
                     )
                     conn.commit()
                     st.session_state["user_id"] = user_id
+                    st.session_state["active_page"] = "Auth"
                     start_onboarding_quiz()
                 except sqlite3.IntegrityError:
                     st.error("❌ Username or email already exists.")
