@@ -253,7 +253,7 @@ with st.sidebar:
         menu_pages = ["Home", "Search", "Auth"]
 
     if "active_page" not in st.session_state:
-    st.session_state["active_page"] = "Home"
+        st.session_state["active_page"] = "Home"
 
     page = st.radio("Go to", menu_pages, index=menu_pages.index(st.session_state["active_page"]))
 
