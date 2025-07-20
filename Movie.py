@@ -41,83 +41,12 @@ CREATE TABLE IF NOT EXISTS user_tags (
 """)
 
 conn.commit()
-
-
-
-
-
-# Constants
-base_url = "https://media.themoviedb.org/t/p/w300_and_h450_bestv2"
-POSTER_WIDTH = 250
-
-
-# ====================== REUSABLE COMPONENTS ======================
-def display_movie_poster(movie_row, show_genres=True, show_ratings=True):
-    """
-    Displays a movie poster with title and optional metadata.
-    Includes a toggleable like button (❤️/🤍) with proper spacing.
-
-    Args:
-        movie_row: A pandas Series or named tuple containing movie data
-        show_genres: Whether to display genres
-        show_ratings: Whether to display ratings/popularity
-    """
-    poster_url = base_url + movie_row.poster_path if pd.notna(movie_row.poster_path) else None
-    imdb_link = f"https://www.imdb.com/title/{movie_row.imdb_id}/" if hasattr(movie_row, 'imdb_id') and pd.notna(
-        movie_row.imdb_id) else None
-
-    # Container for the movie card
-    with st.container():
-        # Poster image
-        if poster_url:
-            st.markdown(f"[![{movie_row.title}]({poster_url})]({imdb_link})", unsafe_allow_html=True)
-        else:
-            st.write("🎬 No poster available")
-
-        # Title and like button row
-        title_col, like_col = st.columns([4, 1])
-        with title_col:
-            st.markdown(f"**{movie_row.title}**", unsafe_allow_html=True)
-
-        # Metadata
-        if show_genres and hasattr(movie_row, 'genres'):
-            st.caption(f"🎭 {movie_row.genres}")
-
-        if show_ratings:
-            rating_text = ""
-            if hasattr(movie_row, 'vote_average'):
-                rating_text += f"⭐ {movie_row.vote_average}"
-            if hasattr(movie_row, 'popularity'):
-                rating_text += f" | 🔥 {movie_row.popularity}"
-            st.caption(rating_text)
-
-        # Add some spacing between movie cards
-        st.markdown("---")
-
-def display_movie_row(movies_df, start_idx=0, num_cols=5):
-    """
-    Displays a row of movie posters.
-
-    Args:
-        movies_df: DataFrame containing movies to display
-        start_idx: Starting index in the DataFrame
-        num_cols: Number of columns to display
-    """
-    cols = st.columns(num_cols)
-    for j, row in enumerate(movies_df.iloc[start_idx:start_idx + num_cols].itertuples()):
-        with cols[j]:
-            display_movie_poster(row)
-
-
-
-
-
-
 def start_onboarding_quiz():
     st.session_state["onboarding_stage"] = 0
     st.session_state["picked_titles"] = []
-    st.session_state["movie_indices"] = random.sample(range(len(vectorized_movie)), 14)
+    st.session_state["movie_indices"] = random.sample(range(len(vectorized_movie)), 14)  # 7 rounds × 2 movies
     st.rerun()
+
 
 def run_onboarding_quiz():
     if "onboarding_stage" not in st.session_state or "movie_indices" not in st.session_state:
@@ -153,14 +82,16 @@ def run_onboarding_quiz():
     col1, col2 = st.columns(2)
 
     with col1:
-        display_movie_poster(movie1, show_genres=True, show_ratings=True)
+        if pd.notna(movie1.poster_path):
+            st.image(base_url + movie1.poster_path, width=250)
         if st.button(f"👍 {movie1.title}", key=f"pick_m1_{idx1}"):
             st.session_state["picked_titles"].append(movie1.title)
             st.session_state["onboarding_stage"] += 1
             st.rerun()
 
     with col2:
-        display_movie_poster(movie2, show_genres=True, show_ratings=True)
+        if pd.notna(movie2.poster_path):
+            st.image(base_url + movie2.poster_path, width=250)
         if st.button(f"👍 {movie2.title}", key=f"pick_m2_{idx2}"):
             st.session_state["picked_titles"].append(movie2.title)
             st.session_state["onboarding_stage"] += 1
@@ -181,10 +112,6 @@ def filter_by_genre(genre, top_n=20):
     filtered = movie[genre_str.str.contains(genre)]
     results = filtered.sort_values(by='popularity', ascending=False).head(top_n)
     return results[['title', 'genres', 'popularity', 'vote_average',"poster_path","imdb_id"]]
-
-
-
-
 
 
 from sklearn.neighbors import NearestNeighbors
@@ -219,12 +146,6 @@ def hybrid_recommender(movier, total_recs=20):
 
 
 
-
-
-
-
-
-
 def title_based(movier):
     movier = movier.lower()
     matches = movie[movie['title'].str.lower().str.contains(movier)]
@@ -247,18 +168,8 @@ with st.sidebar:
                 st.markdown("### 👤 Logged in as:")
                 st.success(user[0])  # Displays the username in a green box
 
-    if "user_id" in st.session_state:
-        menu_pages = ["Home", "Search", "User Options"]
-    else:
-        menu_pages = ["Home", "Search", "User Options", "Auth"]
-    
-    # 🔧 Safely set active_page and index
-    if "active_page" not in st.session_state or st.session_state["active_page"] not in menu_pages:
-        st.session_state["active_page"] = "Home"
-    
-    page = st.radio("Go to", menu_pages, index=menu_pages.index(st.session_state["active_page"]))
-
-
+    menu_pages = ["Home", "Search", "User Options","Auth"]
+    page = st.radio("Go to", menu_pages)
 
     if "user_id" in st.session_state:
         cursor.execute("SELECT username, full_name FROM users WHERE id = ?", (st.session_state["user_id"],))
@@ -269,22 +180,52 @@ with st.sidebar:
                 del st.session_state[key]
             st.rerun()
 
-if page == "Home":
+
+
+
+
+
+
+
+
+
+
+if(page=="Home"):
     st.subheader("🔥 Top Popular Movies")
     top_popular = movie.sort_values(by="popularity", ascending=False).head(10)
 
-    # Using our new display function
     for i in range(0, 10, 5):
-        display_movie_row(top_popular, start_idx=i, num_cols=5)
+        cols = st.columns(5)
+        for j, row in enumerate(top_popular.iloc[i:i + 5].itertuples()):
+            poster_url = base_url + row.poster_path if pd.notna(row.poster_path) and row.poster_path else None
+            imdb_link = f"https://www.imdb.com/title/{row.imdb_id}/" if hasattr(row, 'imdb_id') and pd.notna(
+                row.imdb_id) else None
+
+            with cols[j]:
+                if poster_url:
+                    st.markdown(f"[![{row.title}]({poster_url})]({imdb_link})", unsafe_allow_html=True)
+                st.markdown(f"**{row.title}**", unsafe_allow_html=True)
+                st.caption(f"⭐ {row.vote_average} | 🔥 {row.popularity}")
+
 
     st.subheader("🎯 Top Rated Movies (IMDb)")
     top_rated = movie.sort_values(by="vote_average", ascending=False).head(10)
 
     for i in range(0, 10, 5):
-        display_movie_row(top_rated, start_idx=i, num_cols=5)
+        cols = st.columns(5)
+        for j, row in enumerate(top_rated.iloc[i:i + 5].itertuples()):
+            poster_url = base_url + row.poster_path if pd.notna(row.poster_path) and row.poster_path else None
+            imdb_link = f"https://www.imdb.com/title/{row.imdb_id}/" if hasattr(row, 'imdb_id') and pd.notna(
+                row.imdb_id) else None
 
+            with cols[j]:
+                if poster_url:
+                    st.markdown(f"[![{row.title}]({poster_url})]({imdb_link})", unsafe_allow_html=True)
+                st.markdown(f"**{row.title}**", unsafe_allow_html=True)
+                st.caption(f"⭐ {row.vote_average} | 🔥 {row.popularity}")
     if "user_id" in st.session_state:
         st.subheader("✨ Recommended For You")
+
         try:
             cursor.execute("SELECT tag_vector FROM user_tags WHERE user_id = ?", (st.session_state["user_id"],))
             result = cursor.fetchone()
@@ -294,7 +235,18 @@ if page == "Home":
                 recommended_df = vectorized_movie.iloc[indices[0]]
 
                 for chunk_start in range(0, len(recommended_df), 5):
-                    display_movie_row(recommended_df, start_idx=chunk_start, num_cols=5)
+                    cols = st.columns(5)
+                    for i, row in enumerate(recommended_df.iloc[chunk_start:chunk_start+5].itertuples()):
+                        poster_url = base_url + row.poster_path if pd.notna(row.poster_path) else None
+                        imdb_link = f"https://www.imdb.com/title/{row.imdb_id}/" if pd.notna(row.imdb_id) else None
+
+                        with cols[i]:
+                            if poster_url:
+                                st.markdown(f"[![{row.title}]({poster_url})]({imdb_link})", unsafe_allow_html=True)
+                            else:
+                                st.write("❌ No poster available")
+                            st.markdown(f"**{row.title}**", unsafe_allow_html=True)
+                            st.caption(f"{row.genres}  \n⭐ {row.vote_average} | 🔥 {row.popularity}")
             else:
                 st.info("🔍 No taste profile found. Try signing up or taking the quiz!")
         except Exception as e:
@@ -305,23 +257,31 @@ if page == "Home":
 
 
 
-elif page == "Search":
+elif(page=="Search"):
     left_col, right_col = st.columns([3, 1])
+
     with right_col:
         search_mode = st.selectbox("🔍 Search Type", ["Title", "Genre", "Similar Movies"])
+
     with left_col:
         if search_mode == "Title":
             user_input = st.text_input("Enter movie title")
         elif search_mode == "Genre":
-            genre_list = sorted(set(
+            genre_list = sorted(set( # sorted and removed duplicates
                 genre.strip()
                 for genres in movie['genres'].dropna().astype(str)
                 for genre in genres.replace("[", "").replace("]", "").replace("'", "").split(",")
-                if genre.strip()
+                if genre.strip()  # removes empty strings
             ))
+
             user_input = st.selectbox("Choose Genre", genre_list)
         else:
             user_input = st.selectbox("Choose a Movie", movie['title'].values)
+
+
+
+
+
 
     if st.button("Find Movies 🎥"):
         if search_mode == "Title":
@@ -334,14 +294,21 @@ elif page == "Search":
             results_df = movie[movie['title'].isin(recommended_titles)].copy()
 
         st.markdown("### 🎬 Recommendations:")
+
+        # 🍿 Horizontal rows of 5
         for chunk_start in range(0, len(results_df), 5):
-            display_movie_row(results_df, start_idx=chunk_start, num_cols=5)
+            cols = st.columns(5)
+            for i, row in enumerate(results_df.iloc[chunk_start:chunk_start+5].itertuples()): #itertuples convert each row to a tupple
+                poster_url = base_url + row.poster_path
+                imdb_link = f"https://www.imdb.com/title/{row.imdb_id}/" if pd.notna(row.imdb_id) else None
 
-
-
-
-
-
+                with cols[i]:
+                    if poster_url:
+                        st.markdown(f"[![{row.title}]({poster_url})]({imdb_link})", unsafe_allow_html=True)
+                    else:
+                        st.write("❌ No poster available")
+                    st.markdown(f"**{row.title}**", unsafe_allow_html=True)
+                    st.caption(f"{row.genres}  \n⭐ {row.vote_average} | 🔥 {row.popularity}")
 
 
 
@@ -449,7 +416,6 @@ if page == "Auth":
                     )
                     conn.commit()
                     st.session_state["user_id"] = user_id
-                    st.session_state["active_page"] = "Auth"
                     start_onboarding_quiz()
                 except sqlite3.IntegrityError:
                     st.error("❌ Username or email already exists.")
