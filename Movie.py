@@ -250,12 +250,14 @@ with st.sidebar:
     if "user_id" in st.session_state:
         menu_pages = ["Home", "Search", "User Options"]
     else:
-        menu_pages = ["Home", "Search", "Auth"]
-
-    if "active_page" not in st.session_state:
+        menu_pages = ["Home", "Search", "User Options", "Auth"]
+    
+    # 🔧 Safely set active_page and index
+    if "active_page" not in st.session_state or st.session_state["active_page"] not in menu_pages:
         st.session_state["active_page"] = "Home"
-
+    
     page = st.radio("Go to", menu_pages, index=menu_pages.index(st.session_state["active_page"]))
+
 
 
     if "user_id" in st.session_state:
