@@ -6,8 +6,14 @@ import random
 
 
 
+st.set_page_config(layout="wide")
 
 
+st.set_page_config(
+    page_title="CineMatch 🎬",
+    page_icon="🍿",
+    layout="wide"
+)
 
 
 
