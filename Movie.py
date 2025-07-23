@@ -4,14 +4,12 @@ import pandas as pd
 import numpy as np
 import random
 
-hide_github_icon = """
-#GithubIcon {
-  visibility: hidden;
-}
-"""
-st.markdown(hide_github_icon, unsafe_allow_html=True)
 
-# Your app code goes here
+
+
+
+
+
 
 st.title("Movie Recommender")
 
@@ -433,3 +431,16 @@ if page == "Auth":
 
 if "onboarding_stage" in st.session_state:
     run_onboarding_quiz()
+
+
+
+
+
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
