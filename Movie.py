@@ -9,6 +9,8 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
 from functools import partial
+import re  
+
 
 
 
@@ -28,10 +30,11 @@ st.markdown("""
         .header {
             text-align: center;
             padding: 20px 0;
-            background: linear-gradient(90deg, #ff4d4d, #f9cb28);
+            background: linear-gradient(90deg, #3c1a6e, #1e1b26, #3c1a6e);
             color: white;
             border-radius: 10px;
             margin-bottom: 20px;
+            box-shadow: 0 0 8px 2px rgba(92, 40, 140, 0.5);
         }
 
         /* Movie card hover effect */
@@ -162,6 +165,9 @@ conn.commit()
 
 
 # Helper functions
+def is_valid_email(email):
+    pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    return re.match(pattern, email)
 def start_onboarding_quiz():
     st.session_state["onboarding_stage"] = 0
     st.session_state["picked_titles"] = []
@@ -831,24 +837,27 @@ with tab4:
             signup_password = st.text_input("New Password", type="password", key="signup_password_input")
 
             if st.button("Sign Up", key="signup_button"):
-                if signup_username and signup_password:
-                    hashed_pw = bcrypt.hashpw(signup_password.encode(), bcrypt.gensalt()).decode()
-                    try:
-                        cursor.execute(
-                            "INSERT INTO users (username, email, password_hash, full_name) VALUES (?, ?, ?, ?)",
-                            (signup_username, signup_email, hashed_pw, signup_name)
-                        )
-                        user_id = cursor.lastrowid
-                        cursor.execute(
-                            "INSERT INTO user_tags (user_id, tag_vector, raw_tags) VALUES (?, ?, ?)",
-                            (user_id, pickle.dumps(np.zeros(vectors.shape[1])), "")
-                        )
-                        conn.commit()
-                        st.session_state["user_id"] = user_id
-                        st.success("✅ Account created! Let's personalize your experience...")
-                        start_onboarding_quiz()
-                    except sqlite3.IntegrityError:
-                        st.error("❌ Username or email already exists.")
+                if signup_username and signup_password and signup_email and signup_name:
+                    if is_valid_email(signup_email):
+                        hashed_pw = bcrypt.hashpw(signup_password.encode(), bcrypt.gensalt()).decode()
+                        try:
+                            cursor.execute(
+                                "INSERT INTO users (username, email, password_hash, full_name) VALUES (?, ?, ?, ?)",
+                                (signup_username, signup_email, hashed_pw, signup_name)
+                            )
+                            user_id = cursor.lastrowid
+                            cursor.execute(
+                                "INSERT INTO user_tags (user_id, tag_vector, raw_tags) VALUES (?, ?, ?)",
+                                (user_id, pickle.dumps(np.zeros(vectors.shape[1])), "")
+                            )
+                            conn.commit()
+                            st.session_state["user_id"] = user_id
+                            st.success("✅ Account created! Let's personalize your experience...")
+                            start_onboarding_quiz()
+                        except sqlite3.IntegrityError:
+                            st.error("❌ Username or email already exists.")
+                    else:
+                        st.error("❌ Please enter a valid email address.")
                 else:
                     st.warning("Please fill out all required fields.")
     else:
