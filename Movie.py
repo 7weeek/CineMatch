@@ -60,14 +60,17 @@ st.markdown("""
 
 
 
+
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .viewerBadge_container__1QSob {display: none;}
+    .st-emotion-cache-1v0mbdj {display: none;} /* This targets the hosted badge */
     </style>
 """, unsafe_allow_html=True)
+
 
 
 
