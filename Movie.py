@@ -402,7 +402,7 @@ def display_movie_with_actions(row, cols, i, search_mode=None, user_input=None):
         # Remove brackets and quotes if they exist
         genres_display = row.genres.replace("[", "").replace("]", "").replace("'", "")
     else:
-        genres_display = str(row.genres)
+        genres_display =', '.join(row.genres)
 
     with cols[i]:
         st.markdown(f"""
@@ -550,6 +550,8 @@ with tab1:
                             poster_url = base_url + row.poster_path if pd.notna(row.poster_path) else None
                             imdb_link = f"https://www.imdb.com/title/{row.imdb_id}" if pd.notna(row.imdb_id) else None
 
+                            formatted_genres = ', '.join(row.genres)
+                            
                             # Updated to include the movie-card class and consistent styling
                             st.markdown(f"""
                                 <div class="movie-card">
@@ -560,7 +562,7 @@ with tab1:
                                     <div style="padding: 10px;">
                                         <h4>{row.title}</h4>
                                         <p style="color: #666; font-size: 14px;">
-                                            {row.genres}<br>
+                                            {formatted_genres}<br>
                                             ⭐ {row.vote_average} | 🔥 {row.popularity if hasattr(row, 'popularity') else ''}
                                         </p>
                                     </div>
