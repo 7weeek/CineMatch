@@ -879,8 +879,8 @@ with tab4:
                     st.warning("Please fill out all required fields.")
     else:
         st.success("You're already logged in!")
-        if st.button("Go to Profile"):
-            st.switch_page("streamlit_app.py#profile")
+        if st.button("Go to Home"):
+            st.session_state.active_tab = "🏠 Home"
 
     if "onboarding_stage" in st.session_state:
         run_onboarding_quiz()
@@ -891,3 +891,4 @@ st.markdown("""
         <p style="font-size: 12px;">Data provided by TMDB</p>
     </div>
 """, unsafe_allow_html=True)
+
