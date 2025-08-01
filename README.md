@@ -2,6 +2,7 @@
 
 **CineMatch** is a smart, adaptive movie recommendation system designed to personalize suggestions based on individual user preferences — right from the moment they sign up.
 
+![CineMatch Banner](CineMatch.png)
 ---
 
 ## 🔍 What Makes It Unique
